@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arpej">
+<meta name="theme-color" content="#F4F1F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15121A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-192.png">
+<meta charset="utf-8">
+<title>Günlük Arpej</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --bg:#F4F1F5; --surf:#FFFFFF; --surf2:#EEE9EF; --line:#E1DAE3;
+  --tx:#221C26; --dim:#6B6273; --faint:#9990A0;
+  --acc:#B0700F; --accsoft:#F3E3C8; --acctx:#FFFFFF;
+  --cool:#2F7185; --coolsoft:#DCEDF2;
+  --shadow:0 1px 2px rgba(34,28,38,.06),0 8px 24px rgba(34,28,38,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15121A; --surf:#1E1A24; --surf2:#262130; --line:#332C3C;
+    --tx:#F1ECF2; --dim:#9C93A6; --faint:#6B6377;
+    --acc:#E8A33D; --accsoft:#3A2B15; --acctx:#1B1305;
+    --cool:#8ABDD0; --coolsoft:#1B2B33;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15121A; --surf:#1E1A24; --surf2:#262130; --line:#332C3C;
+  --tx:#F1ECF2; --dim:#9C93A6; --faint:#6B6377;
+  --acc:#E8A33D; --accsoft:#3A2B15; --acctx:#1B1305;
+  --cool:#8ABDD0; --coolsoft:#1B2B33;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font-family:Archivo,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+
+.wrap{max-width:460px;margin:0 auto;padding:14px 14px calc(96px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:12px}
+
+/* --- üst --- */
+.top{display:flex;align-items:center;justify-content:space-between;padding:2px 4px}
+.mark{display:flex;align-items:baseline;gap:7px}
+.mark .n{font-family:"Instrument Serif",Georgia,serif;font-size:21px;font-style:italic;letter-spacing:.01em}
+.mark .t{font-size:10.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--faint)}
+.clock{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* --- sahne --- */
+.stage{background:var(--surf);border:1px solid var(--line);border-radius:20px;
+  padding:22px 18px 18px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:var(--acc);width:0%;transition:width .1s linear}
+.stage[data-run="1"]::after{width:var(--prog,0%)}
+.phase{font-size:10.5px;text-transform:uppercase;letter-spacing:.2em;color:var(--faint);height:15px}
+.note{font-family:"Instrument Serif",Georgia,serif;font-size:clamp(56px,17vw,76px);line-height:1.02;
+  margin:6px 0 2px;letter-spacing:-.01em;transition:color .12s}
+.note .sci{font-family:Archivo,sans-serif;font-size:15px;font-weight:500;color:var(--faint);
+  letter-spacing:.04em;vertical-align:super;margin-left:6px}
+.note.chord{color:var(--cool);font-style:italic}
+.sub{font-size:13px;color:var(--dim);min-height:20px}
+.contour{display:flex;align-items:flex-end;justify-content:center;gap:6px;height:74px;margin-top:14px}
+.pt{width:12px;border-radius:7px;background:var(--surf2);border:1px solid var(--line);
+  transition:.14s ease;flex:none}
+.pt.on{background:var(--acc);border-color:var(--acc);width:16px;box-shadow:0 0 0 5px var(--accsoft)}
+.pt.glide{width:100%;max-width:230px;height:10px;border-radius:6px;
+  background:linear-gradient(90deg,var(--surf2),var(--cool),var(--surf2));position:relative}
+.pt.glide i{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;
+  background:var(--acc);left:0;transform:translateX(-50%);transition:left .08s linear}
+
+/* --- kartlar --- */
+.card{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:13px 14px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:11px}
+.lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.15em;color:var(--faint);
+  display:flex;justify-content:space-between;align-items:baseline}
+.lbl b{font-family:Archivo;font-size:15px;letter-spacing:0;text-transform:none;color:var(--tx);
+  font-variant-numeric:tabular-nums}
+
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper .sbtn{width:52px;height:52px;border-radius:14px;background:var(--surf2);border:1px solid var(--line);
+  font-size:24px;line-height:1;display:grid;place-items:center;flex:none;transition:.12s}
+.stepper .sbtn:active{background:var(--accsoft);border-color:var(--acc)}
+.stepper .val{flex:1;text-align:center}
+.stepper .val .big{font-family:"Instrument Serif",Georgia,serif;font-size:30px;line-height:1.1}
+.stepper .val .small{font-size:11.5px;color:var(--faint);letter-spacing:.08em}
+
+.scales{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.scales button{padding:9px 4px;border-radius:10px;font-size:12.5px;font-weight:500;color:var(--dim);
+  background:var(--surf2);border:1px solid transparent;transition:.12s}
+.scales button[aria-pressed="true"]{background:var(--accsoft);border-color:var(--acc);color:var(--acc);font-weight:600}
+.seg{display:flex;background:var(--surf2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;padding:9px 6px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--dim);transition:.12s}
+.seg button[aria-pressed="true"]{background:var(--surf);color:var(--tx);box-shadow:var(--shadow);font-weight:600}
+
+.chips{display:flex;flex-direction:column;gap:6px}
+.chip{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:11px 13px;border-radius:12px;background:var(--surf2);border:1px solid transparent;
+  text-align:left;transition:.12s;width:100%}
+.chip[aria-pressed="true"]{border-color:var(--acc);background:var(--accsoft)}
+.chip .cn{font-size:14px;font-weight:500;white-space:nowrap}
+.chip .deg{font-family:"Instrument Serif",Georgia,serif;font-size:15px;color:var(--faint);
+  white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+.chip[aria-pressed="true"] .deg{color:var(--acc)}
+
+.slide{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--acc);height:32px}
+.tap{padding:9px 14px;border-radius:11px;background:var(--surf2);border:1px solid var(--line);
+  font-size:13px;white-space:nowrap}
+
+.toggles{display:flex;flex-direction:column;gap:2px}
+.tg{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;font-size:14.5px;
+  border-bottom:1px solid var(--line)}
+.tg:last-child{border-bottom:none}
+.tg span{display:flex;flex-direction:column}
+.tg small{font-size:11.5px;color:var(--faint)}
+.sw{width:48px;height:29px;border-radius:16px;background:var(--surf2);border:1px solid var(--line);
+  position:relative;flex:none;transition:.16s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+  background:var(--faint);transition:.16s}
+.sw[aria-pressed="true"]{background:var(--acc);border-color:var(--acc)}
+.sw[aria-pressed="true"]::after{left:23px;background:var(--acctx)}
+
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--faint)}
+select{width:100%;padding:10px 9px;border-radius:11px;background:var(--surf2);
+  border:1px solid var(--line);font-size:14px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+
+/* --- alt bar --- */
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,transparent,var(--bg) 34%);z-index:5}
+.bar .inner{max-width:460px;margin:0 auto;display:flex;gap:9px}
+.play{flex:1;height:58px;border-radius:17px;background:var(--acc);color:var(--acctx);
+  font-size:17px;font-weight:700;letter-spacing:.01em;box-shadow:var(--shadow);transition:.12s}
+.play:active{transform:scale(.985)}
+.play.stop{background:var(--surf);color:var(--tx);border:1px solid var(--line)}
+.foot{text-align:center;font-size:11.5px;color:var(--faint);padding:2px 8px 0;line-height:1.55}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="mark"><span class="n">Günlük Arpej</span><span class="t">akor + pasaj</span></div>
+    <div class="clock" id="clock">0:00</div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="phase" id="phase">hazır</div>
+    <div class="note" id="note">Do3<span class="sci">C3</span></div>
+    <div class="sub" id="sub">Do majör · 1 – 3 – 5 – 3 – 1</div>
+    <div class="contour" id="contour"></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Ton <b id="tonName">Do3</b></div>
+    <div class="stepper">
+      <button class="sbtn" id="dn" aria-label="Bir yarım ses aşağı">−</button>
+      <div class="val"><div class="big" id="tonBig">Do3</div><div class="small" id="tonSci">C3 · 130.8 Hz</div></div>
+      <button class="sbtn" id="up" aria-label="Bir yarım ses yukarı">+</button>
+    </div>
+    <div class="scales" id="qual"></div>
+    <button class="tap" id="tone" style="width:100%">Ton ver</button>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Kalıp</div>
+    <div class="chips" id="pats"></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Tempo <b><span id="bpmVal">66</span> BPM</b></div>
+    <div class="slide">
+      <button class="tap" id="bdn" aria-label="Tempoyu azalt">−</button>
+      <input type="range" id="bpm" min="40" max="160" step="1" value="66" aria-label="Tempo">
+      <button class="tap" id="bup" aria-label="Tempoyu artır">+</button>
+    </div>
+    <button class="tap" id="tap" style="width:100%">Tempoya vur</button>
+  </div>
+
+  <div class="card">
+    <div class="toggles">
+      <div class="tg"><span>Önce akor<small>Tonaliteyi oturtur</small></span><button class="sw" id="tChord" aria-pressed="true" aria-label="Önce akor"></button></div>
+      <div class="tg"><span>Rehber sesi<small>Kalıbı önce piyano çalar</small></span><button class="sw" id="tGuide" aria-pressed="true" aria-label="Rehber sesi"></button></div>
+      <div class="tg"><span>Metronom<small>Her vuruşta tik</small></span><button class="sw" id="tClick" aria-pressed="false" aria-label="Metronom"></button></div>
+      <div class="tg"><span>Sürekli tekrar<small>Bitince baştan başlar</small></span><button class="sw" id="tLoop" aria-pressed="false" aria-label="Sürekli tekrar"></button></div>
+    </div>
+    <div class="mini">
+      <div class="fld"><label for="tr">Transpoze</label><select id="tr">
+        <option value="off">Kapalı — tek ton</option>
+        <option value="up" selected>Çıkarak</option>
+        <option value="down">İnerek</option>
+        <option value="pp">Çık ve in</option></select></div>
+      <div class="fld"><label for="steps">Kaç adım</label><select id="steps">
+        <option>3</option><option>4</option><option selected>5</option><option>6</option>
+        <option>8</option><option>10</option><option>12</option></select></div>
+      <div class="fld"><label for="ivl">Adım aralığı</label><select id="ivl">
+        <option value="1" selected>Yarım ses</option><option value="2">Tam ses</option></select></div>
+      <div class="fld"><label for="cb">Akor uzunluğu</label><select id="cb">
+        <option value="2">2 vuruş</option><option value="4" selected>4 vuruş</option>
+        <option value="8">8 vuruş</option></select></div>
+      <div class="fld"><label for="rest">Dinlenme</label><select id="rest">
+        <option value="0">Yok</option><option value="2">2 sn</option><option value="4" selected>4 sn</option>
+        <option value="6">6 sn</option><option value="8">8 sn</option></select></div>
+    </div>
+  </div>
+
+  <div class="foot" id="foot">Kulaklıkla çalış. iPhone’da sessiz düğmesi açıksa ses gelmez.</div>
+</div>
+
+<div class="bar"><div class="inner"><button class="play" id="play">Başlat</button></div></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var TR=['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+var mtof=function(m){return 440*Math.pow(2,(m-69)/12)};
+var pc=function(m){return ((m%12)+12)%12};
+var ocv=function(m){return Math.floor(m/12)-1};
+var sci=function(m){return NAMES[pc(m)]+ocv(m)};
+var tr=function(m){return TR[pc(m)]+ocv(m)};
+
+var SCALES=[
+ {id:'maj', k:'Majör',    n:'majör',           s:[0,2,4,5,7,9,11,12,14,16]},
+ {id:'min', k:'Minör',    n:'doğal minör',     s:[0,2,3,5,7,8,10,12,14,15]},
+ {id:'phr', k:'Frijyan',  n:'frijyan',         s:[0,1,3,5,7,8,10,12,13,15]},
+ {id:'mel', k:'Melodik',  n:'melodik minör',   s:[0,2,3,5,7,9,11,12,14,16]},
+ {id:'har', k:'Harmonik', n:'harmonik minör',  s:[0,2,3,5,7,8,11,12,14,15]}
+];
+var PATS=[
+ {id:'a5',   deg:[1,3,5,3,1],            n:'Küçük arpej'},
+ {id:'a8',   deg:[1,3,5,8,5,3,1],        n:'Oktav arpej'},
+ {id:'a10',  deg:[1,3,5,8,10,8,5,3,1],   n:'Geniş arpej'},
+ {id:'up8',  deg:[1,3,5,8],              n:'Çıkan arpej'},
+ {id:'dn8',  deg:[8,5,3,1],              n:'İnen arpej'},
+ {id:'d5',   deg:[5,4,3,2,1],            n:'Beşli iniş'},
+ {id:'s5',   deg:[1,2,3,4,5,4,3,2,1],    n:'Beşli gam'},
+ {id:'d9',   deg:[9,8,7,6,5,4,3,2,1],    n:'Dokuzlu iniş'},
+ {id:'oct',  deg:[1,5,8,5,1],            n:'Boş beşli–oktav'},
+ {id:'hold', deg:[1],                    n:'Uzun ses', beats:8},
+ {id:'siren',deg:[1,5,1],                n:'Siren (kaydırma)', siren:true, sec:8}
+];
+
+/* ---- kalıcı ayarlar ---- */
+var S={root:48,qual:'maj',pat:'a5',bpm:66,chord:true,guide:true,click:false,loop:false,
+       tr:'up',steps:5,ivl:1,rest:4,chordBeats:4};
+try{ var sv=JSON.parse(localStorage.getItem('ga_v1')||'{}');
+     for(var k in sv) if(k in S) S[k]=sv[k]; }catch(e){}
+function save(){ try{ localStorage.setItem('ga_v1',JSON.stringify(S)); }catch(e){} }
+
+/* ---- ses ---- */
+var ac=null, master=null, live=[];
+function actx(){
+  if(!ac){ ac=new (window.AudioContext||window.webkitAudioContext)();
+    master=ac.createGain(); master.gain.value=.75; master.connect(ac.destination); }
+  if(ac.state==='suspended') ac.resume();
+  return ac;
+}
+function voice(f0,t0,dur,vol,kind,f1){
+  var ctx=actx();
+  var g=ctx.createGain(), lp=ctx.createBiquadFilter();
+  lp.type='lowpass'; lp.frequency.value=(kind==='chord')?4400:4000; lp.Q.value=.4;
+  lp.connect(g); g.connect(master);
+  var parts=(kind==='chord')?[[1,.85],[2,.55],[3,.34],[4,.2],[5,.11],[6,.06]]
+                            :[[1,1],[2,.42],[3,.18],[4,.08]];
+  parts.forEach(function(p){
+    var o=ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(f0*p[0],t0);
+    if(f1){ o.frequency.exponentialRampToValueAtTime(f1*p[0],t0+dur*.5);
+            o.frequency.exponentialRampToValueAtTime(f0*p[0],t0+dur); }
+    var og=ctx.createGain(); og.gain.value=p[1];
+    o.connect(og); og.connect(lp); o.start(t0); o.stop(t0+dur+.3); live.push(o);
+  });
+  var gg=g.gain;
+  gg.setValueAtTime(.0001,t0);
+  gg.exponentialRampToValueAtTime(vol,t0+.025);
+  if(kind==='chord') gg.exponentialRampToValueAtTime(Math.max(vol*.45,.0002),t0+dur);
+  else gg.setValueAtTime(vol,t0+Math.max(.05,dur-.09));
+  gg.exponentialRampToValueAtTime(.0001,t0+dur+.2);
+}
+function tick(t0,hi){
+  var ctx=actx(), o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='square'; o.frequency.value=hi?1500:1050;
+  g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(hi?.09:.045,t0+.004);
+  g.gain.exponentialRampToValueAtTime(.0001,t0+.06);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0+.09); live.push(o);
+}
+function killAll(){ var t=ac?ac.currentTime:0;
+  live.forEach(function(o){ try{o.stop(t)}catch(e){} }); live=[]; }
+/* iOS/Safari ses motorunu dokunma anında uyandırır; hazır olmadan nota planlanmaz */
+async function unlock(){
+  var ctx=actx();
+  try{ await ctx.resume(); }catch(e){}
+  try{ var b=ctx.createBuffer(1,1,ctx.sampleRate), sc=ctx.createBufferSource();
+       sc.buffer=b; sc.connect(ctx.destination); sc.start(0); }catch(e){}
+  for(var i=0;i<24 && ctx.state!=='running';i++){ await new Promise(function(r){setTimeout(r,25)}); }
+  return ctx;
+}
+
+/* ---- yardımcı ---- */
+function pat(){ for(var i=0;i<PATS.length;i++) if(PATS[i].id===S.pat) return PATS[i]; return PATS[0]; }
+function scaleDef(){ for(var i=0;i<SCALES.length;i++) if(SCALES[i].id===S.qual) return SCALES[i]; return SCALES[0]; }
+function scale(){ return scaleDef().s; }
+function qname(){ return scaleDef().n; }
+function semi(d){ return scale()[d-1]; }
+function chordNotes(root){
+  var sc=scale(), a=[root,root+sc[2],root+sc[4],root+12];
+  if(root>=55) a.unshift(root-12);            // ton yükseldikçe altına gövde ekle
+  return a;
+}
+/* Akor tam olarak S.chordBeats vuruş sürer; kalıp bir sonraki vuruşta başlar.
+   Hafif arpejleme de tempoya bağlı — küçük hoparlörde tonalite böyle oturuyor. */
+function playChord(root,t,beat){
+  var total=beat*S.chordBeats;
+  var strum=Math.min(.05, beat*.07);
+  chordNotes(root).forEach(function(m,i){
+    voice(mtof(m), t+i*strum, total*.92-i*strum, .115, 'chord');
+  });
+  return total;
+}
+function degLabel(p){ return p.degs; }
+PATS.forEach(function(p){
+  p.degs = p.siren ? '1 ⌒ 5 ⌒ 1' : (p.beats ? '1 —— uzat' : p.deg.join(' – '));
+});
+
+/* ---- arayüz ---- */
+function renderScales(){
+  var box=$('#qual'); box.innerHTML='';
+  SCALES.forEach(function(sc){
+    var b=document.createElement('button');
+    b.type='button'; b.textContent=sc.k;
+    b.setAttribute('aria-pressed', sc.id===S.qual?'true':'false');
+    b.onclick=function(){ S.qual=sc.id; save(); syncUI(); };
+    box.appendChild(b);
+  });
+}
+function renderPats(){
+  var box=$('#pats'); box.innerHTML='';
+  PATS.forEach(function(p){
+    var b=document.createElement('button');
+    b.className='chip'; b.setAttribute('aria-pressed', p.id===S.pat?'true':'false');
+    b.innerHTML='<span class="cn">'+p.n+'</span><span class="deg">'+p.degs+'</span>';
+    b.onclick=function(){ S.pat=p.id; save(); renderPats(); renderStage(); };
+    box.appendChild(b);
+  });
+}
+function contourFor(p,root){
+  var c=$('#contour'); c.innerHTML='';
+  if(p.siren){
+    var g=document.createElement('div'); g.className='pt glide';
+    g.innerHTML='<i id="knob"></i>'; c.appendChild(g); return;
+  }
+  var sem=p.deg.map(semi), lo=Math.min.apply(null,sem), hi=Math.max.apply(null,sem);
+  p.deg.forEach(function(d,i){
+    var el=document.createElement('div'); el.className='pt';
+    el.style.height=(12+(hi>lo?(semi(d)-lo)/(hi-lo):0)*50)+'px';
+    el.dataset.i=i; c.appendChild(el);
+  });
+}
+function renderStage(){
+  var p=pat(), root=S.root;
+  $('#tonBig').textContent=tr(root);
+  $('#tonName').textContent=tr(root);
+  $('#tonSci').textContent=sci(root)+' · '+mtof(root).toFixed(1)+' Hz';
+  if(!running){
+    $('#note').innerHTML=tr(root)+'<span class="sci">'+sci(root)+'</span>';
+    $('#note').className='note';
+    $('#phase').textContent='hazır';
+    $('#sub').textContent=tr(root)+' '+qname()+' · '+p.n+'  ·  '+degLabel(p);
+  }
+  contourFor(p,root);
+}
+function syncUI(){
+  $('#bpm').value=S.bpm; $('#bpmVal').textContent=S.bpm;
+  $('#tr').value=S.tr; $('#steps').value=String(S.steps); $('#ivl').value=String(S.ivl);
+  $('#rest').value=String(S.rest); $('#cb').value=String(S.chordBeats);
+  [['#tChord','chord'],['#tGuide','guide'],['#tClick','click'],['#tLoop','loop']].forEach(function(x){
+    $(x[0]).setAttribute('aria-pressed', S[x[1]]?'true':'false');
+  });
+  renderScales();
+  renderPats(); renderStage();
+}
+
+/* ---- sekans ---- */
+var running=false, gen=0, events=[], sec=0, clockId=null, wake=null;
+function roots(){
+  var out=[], n=+S.steps, iv=+S.ivl;
+  if(S.tr==='off') return [S.root];
+  for(var i=0;i<n;i++) out.push(S.root + (S.tr==='down'?-i*iv:i*iv));
+  if(S.tr==='pp') out=out.concat(out.slice(0,-1).reverse());
+  return out;
+}
+function scheduleRep(root){
+  var ctx=actx(), p=pat(), beat=60/S.bpm, ev=[], t0=ctx.currentTime+.3, t=t0;
+  if(S.chord){
+    var d=playChord(root,t,beat);
+    ev.push({a:t,b:t+d,k:'chord',root:root}); t+=d;   // boşluk yok: kalıp tam vuruşta girer
+  }
+  var patStart=t;
+  if(p.siren){
+    var lo=root, hi=root+semi(5), sc=p.sec;
+    if(S.guide) voice(mtof(lo),t,sc,.075,'guide',mtof(hi));
+    ev.push({a:t,b:t+sc,k:'siren',lo:lo,hi:hi}); t+=sc;
+  } else if(p.beats){
+    var dl=beat*p.beats, m0=root+semi(p.deg[0]);
+    if(S.guide) voice(mtof(m0),t,dl,.085,'guide');
+    ev.push({a:t,b:t+dl,k:'note',m:m0,i:0}); t+=dl;
+  } else {
+    p.deg.forEach(function(d,i){
+      var m=root+semi(d);
+      if(S.guide) voice(mtof(m),t,beat*.93,.085,'guide');
+      ev.push({a:t,b:t+beat,k:'note',m:m,i:i}); t+=beat;
+    });
+  }
+  if(S.click){
+    for(var bt=t0; bt<t-1e-6; bt+=beat){
+      tick(bt, Math.abs(bt-t0)<1e-6 || Math.abs(bt-patStart)<1e-6);
+    }
+  }
+  return {ev:ev,end:t};
+}
+function wait(tt,g){ return new Promise(function(res){ (function loop(){
+  if(g!==gen) return res(false);
+  if(actx().currentTime>=tt) return res(true);
+  setTimeout(loop,25); })(); }); }
+
+async function run(){
+  var g=++gen;
+  running=true;
+  $('#play').textContent='Durdur'; $('#play').classList.add('stop');
+  $('#stage').setAttribute('data-run','1');
+  requestWake(); startClock();
+  do{
+    var rs=roots();
+    for(var i=0;i<rs.length;i++){
+      if(g!==gen) break;
+      contourFor(pat(),rs[i]);
+      var r=scheduleRep(rs[i]);
+      events=r.ev;
+      $('#sub').textContent=tr(rs[i])+' '+qname()+
+        (rs.length>1?'  ·  '+(i+1)+'/'+rs.length:'')+'  ·  '+pat().n;
+      $('#stage').style.setProperty('--prog',((i+1)/rs.length*100)+'%');
+      var ok=await wait(r.end,g);
+      if(!ok) return;
+      if(S.rest>0 && (i<rs.length-1 || S.loop)){
+        events=[]; $('#phase').textContent='dinlen';
+        $('#note').innerHTML='—'; $('#note').className='note';
+        var ok2=await wait(actx().currentTime+ +S.rest,g);
+        if(!ok2) return;
+      }
+    }
+  } while(S.loop && g===gen);
+  if(g===gen) finish();
+}
+function finish(){
+  running=false; events=[];
+  $('#play').textContent='Başlat'; $('#play').classList.remove('stop');
+  $('#stage').removeAttribute('data-run');
+  $('#phase').textContent='bitti';
+  releaseWake(); stopClock(); renderStage();
+}
+function stop(){ gen++; killAll(); finish(); }
+
+/* ---- ekran döngüsü ---- */
+function frame(){
+  requestAnimationFrame(frame);
+  if(!running || !events.length || !ac) return;
+  var now=ac.currentTime, cur=null;
+  for(var i=0;i<events.length;i++){ if(now>=events[i].a && now<events[i].b){ cur=events[i]; break; } }
+  var dots=$('#contour').children;
+  if(!cur){ if(now<events[0].a){ $('#phase').textContent='hazırlan'; } return; }
+  if(cur.k==='chord'){
+    $('#phase').textContent='akor';
+    $('#note').innerHTML=tr(cur.root)+' '+qname();
+    $('#note').className='note chord';
+    for(var j=0;j<dots.length;j++) dots[j].classList.remove('on');
+  } else if(cur.k==='siren'){
+    var pr=(now-cur.a)/(cur.b-cur.a), x=pr<.5?pr*2:2-pr*2;
+    var m=cur.lo+(cur.hi-cur.lo)*x;
+    $('#phase').textContent='siren';
+    $('#note').innerHTML=tr(Math.round(m))+'<span class="sci">'+sci(Math.round(m))+'</span>';
+    $('#note').className='note';
+    var kn=document.getElementById('knob'); if(kn) kn.style.left=(x*100)+'%';
+  } else {
+    $('#phase').textContent='söyle';
+    $('#note').innerHTML=tr(cur.m)+'<span class="sci">'+sci(cur.m)+'</span>';
+    $('#note').className='note';
+    for(var k=0;k<dots.length;k++) dots[k].classList.toggle('on', k===cur.i);
+  }
+}
+requestAnimationFrame(frame);
+
+/* ---- süre & ekran uyanık ---- */
+function startClock(){ if(clockId) return;
+  clockId=setInterval(function(){ sec++;
+    $('#clock').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); },1000); }
+function stopClock(){ clearInterval(clockId); clockId=null; }
+async function requestWake(){ try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request('screen'); }catch(e){} }
+function releaseWake(){ try{ if(wake){ wake.release(); wake=null; } }catch(e){} }
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible' && running) requestWake(); });
+
+/* ---- olaylar ---- */
+$('#play').onclick=function(){ if(running){ stop(); } else { unlock().then(run); } };
+$('#tone').onclick=function(){ unlock().then(function(ctx){
+  playChord(S.root,ctx.currentTime+.12,60/S.bpm);
+  $('#tone').textContent='Ton verildi  ·  '+tr(S.root)+' '+qname();
+  setTimeout(function(){ $('#tone').textContent='Ton ver'; },1600);
+}); };
+$('#up').onclick=function(){ if(S.root<72){S.root++;save();renderStage();} };
+$('#dn').onclick=function(){ if(S.root>36){S.root--;save();renderStage();} };
+
+$('#bpm').oninput=function(e){ S.bpm=+e.target.value; $('#bpmVal').textContent=S.bpm; save(); };
+$('#bup').onclick=function(){ S.bpm=Math.min(160,S.bpm+2); syncUI(); save(); };
+$('#bdn').onclick=function(){ S.bpm=Math.max(40,S.bpm-2); syncUI(); save(); };
+var taps=[];
+$('#tap').onclick=function(){
+  var now=Date.now(); taps.push(now); taps=taps.filter(function(t){return now-t<3000});
+  if(taps.length>1){
+    var d=[]; for(var i=1;i<taps.length;i++) d.push(taps[i]-taps[i-1]);
+    var avg=d.reduce(function(a,b){return a+b},0)/d.length;
+    S.bpm=Math.max(40,Math.min(160,Math.round(60000/avg))); syncUI(); save();
+  }
+  $('#tap').textContent='Tempoya vur  ·  '+S.bpm+' BPM';
+};
+[['#tChord','chord'],['#tGuide','guide'],['#tClick','click'],['#tLoop','loop']].forEach(function(x){
+  $(x[0]).onclick=function(){ S[x[1]]=!S[x[1]]; $(x[0]).setAttribute('aria-pressed',S[x[1]]?'true':'false'); save(); };
+});
+['tr','steps','ivl','rest'].forEach(function(id){
+  $('#'+id).onchange=function(e){ S[id]=e.target.value; save(); };
+});
+$('#cb').onchange=function(e){ S.chordBeats=+e.target.value; save(); renderStage(); };
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){ e.preventDefault(); $('#play').click(); }
+  if(e.key==='ArrowUp'){ $('#up').click(); } if(e.key==='ArrowDown'){ $('#dn').click(); }
+});
+syncUI();
+
+/* çevrimdışı çalışsın diye service worker */
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+})();
+</script>
+</body>
+</html>
