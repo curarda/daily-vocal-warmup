@@ -4,7 +4,7 @@ Bu klasör hazır bir git deposu. Kimlik, uzak adres ve dal zaten ayarlandı:
 
 - kullanıcı: `curarda`
 - commit e-postası: `211261331+curarda@users.noreply.github.com` (GitHub'ın gizli noreply adresi)
-- uzak adres: `https://github.com/curarda/gunluk-arpej.git`
+- uzak adres: `https://github.com/curarda/daily-vocal-warmup.git`
 - dal: `main`
 
 > **Neden noreply adresi:** GitHub hesabında "Keep my email addresses private" açık.
@@ -40,7 +40,7 @@ Depo → **Settings** → sol menü **Pages** →
 
 1–2 dakika sonra adres:
 
-    https://curarda.github.io/gunluk-arpej/
+    https://curarda.github.io/daily-vocal-warmup/
 
 ## 4. iPhone'a ekle
 
